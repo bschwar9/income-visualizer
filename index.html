@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0c;
+            --bg-secondary: #111114;
+            --bg-tertiary: #18181c;
+            --bg-card: #141417;
+            --border: #252529;
+            --border-hover: #3a3a40;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #c9a227;
+            --accent-dim: rgba(201, 162, 39, 0.15);
+            --accent-glow: rgba(201, 162, 39, 0.4);
+            --success: #34d399;
+            --success-dim: rgba(52, 211, 153, 0.15);
+            --danger: #f87171;
+            --danger-dim: rgba(248, 113, 113, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Subtle background texture */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(201, 162, 39, 0.08), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 100%, rgba(201, 162, 39, 0.04), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem 4rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand h1 {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 2.25rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
+        }
+
+        .brand h1 span {
+            color: var(--accent);
+        }
+
+        .brand p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Balance Display - Centerpiece */
+        .balance-display {
+            background: linear-gradient(145deg, #1a1a20 0%, #0d0d10 100%);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .balance-display::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 50% 80% at 50% 120%, rgba(201, 162, 39, 0.08), transparent);
+            pointer-events: none;
+        }
+
+        .balance-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .balance-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .balance-amount {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 4.5rem;
+            font-weight: 400;
+            background: linear-gradient(135deg, #ffd700 0%, #c9a227 50%, #ffd700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 0.75rem;
+            text-shadow: 0 0 80px rgba(201, 162, 39, 0.3);
+        }
+
+        .balance-meta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .balance-rate {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            background: var(--success-dim);
+            color: var(--success);
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 100px;
+        }
+
+        .balance-actions {
+            display: inline-flex;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        /* Main Content */
+        main {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        /* Section Card */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .section-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        /* Tax Settings */
+        .tax-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1.5rem;
+            align-items: end;
+        }
+
+        @media (max-width: 700px) {
+            .tax-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.875rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            appearance: none;
+        }
+
+        .form-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+            cursor: pointer;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .tax-stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .tax-stat {
+            text-align: center;
+        }
+
+        .tax-stat .value {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .tax-stat .value.danger {
+            color: var(--danger);
+        }
+
+        .tax-stat .value.success {
+            color: var(--success);
+        }
+
+        .tax-stat .label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Add Button */
+        .btn-add {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent-dim);
+            border: 1px dashed var(--accent);
+            border-radius: 12px;
+            color: var(--accent);
+            font-size: 0.9375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-add:hover {
+            background: rgba(201, 162, 39, 0.25);
+            border-style: solid;
+        }
+
+        .btn-add svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Income Sources Grid */
+        .sources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Income Card */
+        .income-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .income-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1rem;
+            bottom: 1rem;
+            width: 3px;
+            background: var(--border);
+            border-radius: 0 3px 3px 0;
+            transition: background 0.25s ease;
+        }
+
+        .income-card.active::before {
+            background: var(--success);
+            box-shadow: 0 0 12px var(--success);
+        }
+
+        .income-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .income-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .income-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        .supplemental-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(251, 146, 60, 0.15);
+            color: #fb923c;
+            border-radius: 6px;
+            font-size: 0.6875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .btn-delete {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger-dim);
+            color: var(--danger);
+        }
+
+        .income-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .income-inputs .form-group:first-child {
+            grid-column: span 2;
+        }
+
+        .income-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .income-stat {
+            text-align: center;
+        }
+
+        .income-stat .value {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 1.125rem;
+            color: var(--success);
+        }
+
+        .income-stat .label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            opacity: 0.6;
+        }
+
+        .empty-state p {
+            font-size: 0.9375rem;
+        }
+
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+
+        .summary-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .summary-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .summary-item .value {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 1.375rem;
+            color: var(--success);
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-item .label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .income-card {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        /* Smooth number transitions */
+        .balance-amount,
+        .summary-item .value,
+        .income-stat .value,
+        .tax-stat .value {
+            transition: color 0.3s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .app {
+                padding: 1.5rem 1rem 3rem;
+            }
+
+            .brand h1 {
+                font-size: 1.75rem;
+            }
+
+            .balance-display {
+                padding: 1.5rem;
+            }
+
+            .balance-amount {
+                font-size: 2.75rem;
+            }
+
+            .balance-meta {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .sources-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tax-stats {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .tax-stat {
+                flex: 1;
+                min-width: 80px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <div class="brand">
+                <h1>Income <span>Visualizer</span></h1>
+                <p>Real-time earnings visualization</p>
+            </div>
+        </header>
+
+        <div class="balance-display">
+            <div class="balance-content">
+                <div class="balance-label">Total Earned</div>
+                <div class="balance-amount" id="balance">$0.0000</div>
+                <div class="balance-meta">
+                    <div class="balance-rate" id="rate">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                        <span id="rate-value">$0.00/sec</span>
+                    </div>
+                    <div class="balance-actions">
+                        <button class="btn-ghost" onclick="resetBalance()">Reset Counter</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <!-- Tax Settings -->
+            <section class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Tax Configuration</h2>
+                </div>
+                <div class="tax-grid">
+                    <div class="form-group">
+                        <label>Filing State</label>
+                        <select id="state-select" onchange="onStateChange()">
+                            <option value="">Select your state...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="city-group" style="display: none;">
+                        <label>City (Local Tax)</label>
+                        <select id="city-select" onchange="updateTaxCalculations()">
+                            <option value="">No local tax</option>
+                        </select>
+                    </div>
+                    <div class="tax-stats" id="tax-stats" style="display: none;">
+                        <div class="tax-stat">
+                            <div class="value danger" id="federal-rate">0%</div>
+                            <div class="label">Federal</div>
+                        </div>
+                        <div class="tax-stat">
+                            <div class="value danger" id="state-rate">0%</div>
+                            <div class="label">State</div>
+                        </div>
+                        <div class="tax-stat" id="local-stat" style="display: none;">
+                            <div class="value danger" id="local-rate">0%</div>
+                            <div class="label">Local</div>
+                        </div>
+                        <div class="tax-stat">
+                            <div class="value danger" id="total-rate">0%</div>
+                            <div class="label">Effective</div>
+                        </div>
+                        <div class="tax-stat">
+                            <div class="value success" id="take-home">$0</div>
+                            <div class="label">Take-Home</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Income Sources -->
+            <section class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">Income Sources</h2>
+                </div>
+                <div class="sources-grid" id="sources-grid">
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-state-icon">💼</div>
+                        <p>Add your first income source to begin tracking</p>
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addSource()" style="margin-top: 1rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Add Income Source
+                </button>
+            </section>
+
+            <!-- Summary -->
+            <section class="section-card" id="summary-section" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">After-Tax Summary</h2>
+                </div>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="value" id="sum-second">$0.00</div>
+                        <div class="label">Per Second</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value" id="sum-hour">$0.00</div>
+                        <div class="label">Per Hour</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value" id="sum-day">$0.00</div>
+                        <div class="label">Per Day</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value" id="sum-week">$0.00</div>
+                        <div class="label">Per Week</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value" id="sum-month">$0.00</div>
+                        <div class="label">Per Month</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="value" id="sum-year">$0.00</div>
+                        <div class="label">Per Year</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // 2025 Federal Tax Brackets (Single Filer)
+        const federalBrackets = [
+            { min: 0, max: 11925, rate: 0.10 },
+            { min: 11925, max: 48475, rate: 0.12 },
+            { min: 48475, max: 103350, rate: 0.22 },
+            { min: 103350, max: 197300, rate: 0.24 },
+            { min: 197300, max: 250525, rate: 0.32 },
+            { min: 250525, max: 626350, rate: 0.35 },
+            { min: 626350, max: Infinity, rate: 0.37 }
+        ];
+
+        const federalStandardDeduction = 15000;
+
+        // Federal supplemental wage tax rates (for bonuses, commissions, etc.)
+        const federalSupplementalRate = 0.22; // 22% flat rate
+        const federalSupplementalRateHigh = 0.37; // 37% for amounts over $1M
+
+        function calculateSupplementalFederalTax(supplementalIncome) {
+            if (supplementalIncome <= 1000000) {
+                return supplementalIncome * federalSupplementalRate;
+            } else {
+                // 22% on first $1M, 37% on the rest
+                return (1000000 * federalSupplementalRate) + ((supplementalIncome - 1000000) * federalSupplementalRateHigh);
+            }
+        }
+
+        // Local/City tax data (2025)
+        const localTaxData = {
+            'NY': {
+                cities: {
+                    'NYC': { 
+                        name: 'New York City',
+                        brackets: [
+                            { min: 0, max: 12000, rate: 0.03078 },
+                            { min: 12000, max: 25000, rate: 0.03762 },
+                            { min: 25000, max: 50000, rate: 0.03819 },
+                            { min: 50000, max: Infinity, rate: 0.03876 }
+                        ]
+                    },
+                    'YON': {
+                        name: 'Yonkers',
+                        surchargeRate: 0.16535 // 16.535% of state tax
+                    }
+                }
+            }
+        };
+
+        // State tax data (2025)
+        const stateTaxData = {
+            'AL': { name: 'Alabama', brackets: [{min:0,max:500,rate:0.02},{min:500,max:3000,rate:0.04},{min:3000,max:Infinity,rate:0.05}], standardDeduction: 3000 },
+            'AK': { name: 'Alaska', rate: 0, noTax: true },
+            'AZ': { name: 'Arizona', rate: 0.025, standardDeduction: 15000 },
+            'AR': { name: 'Arkansas', brackets: [{min:0,max:4500,rate:0.02},{min:4500,max:Infinity,rate:0.039}], standardDeduction: 2410 },
+            'CA': { name: 'California', brackets: [{min:0,max:10756,rate:0.01},{min:10756,max:25499,rate:0.02},{min:25499,max:40245,rate:0.04},{min:40245,max:55866,rate:0.06},{min:55866,max:70606,rate:0.08},{min:70606,max:360659,rate:0.093},{min:360659,max:432787,rate:0.103},{min:432787,max:721314,rate:0.113},{min:721314,max:1000000,rate:0.123},{min:1000000,max:Infinity,rate:0.133}], standardDeduction: 5540 },
+            'CO': { name: 'Colorado', rate: 0.044, standardDeduction: 15000 },
+            'CT': { name: 'Connecticut', brackets: [{min:0,max:10000,rate:0.02},{min:10000,max:50000,rate:0.045},{min:50000,max:100000,rate:0.055},{min:100000,max:200000,rate:0.06},{min:200000,max:250000,rate:0.065},{min:250000,max:500000,rate:0.069},{min:500000,max:Infinity,rate:0.0699}], standardDeduction: 0 },
+            'DE': { name: 'Delaware', brackets: [{min:0,max:2000,rate:0},{min:2000,max:5000,rate:0.022},{min:5000,max:10000,rate:0.039},{min:10000,max:20000,rate:0.048},{min:20000,max:25000,rate:0.052},{min:25000,max:60000,rate:0.0555},{min:60000,max:Infinity,rate:0.066}], standardDeduction: 3250 },
+            'FL': { name: 'Florida', rate: 0, noTax: true },
+            'GA': { name: 'Georgia', rate: 0.0539, standardDeduction: 12000 },
+            'HI': { name: 'Hawaii', brackets: [{min:0,max:9600,rate:0.014},{min:9600,max:14400,rate:0.032},{min:14400,max:19200,rate:0.055},{min:19200,max:24000,rate:0.064},{min:24000,max:36000,rate:0.068},{min:36000,max:48000,rate:0.072},{min:48000,max:125000,rate:0.076},{min:125000,max:175000,rate:0.079},{min:175000,max:225000,rate:0.0825},{min:225000,max:275000,rate:0.09},{min:275000,max:325000,rate:0.10},{min:325000,max:Infinity,rate:0.11}], standardDeduction: 4400 },
+            'ID': { name: 'Idaho', rate: 0.05695, standardDeduction: 15000 },
+            'IL': { name: 'Illinois', rate: 0.0495, standardDeduction: 0 },
+            'IN': { name: 'Indiana', rate: 0.03, standardDeduction: 0 },
+            'IA': { name: 'Iowa', rate: 0.038, standardDeduction: 0 },
+            'KS': { name: 'Kansas', brackets: [{min:0,max:23000,rate:0.052},{min:23000,max:Infinity,rate:0.0558}], standardDeduction: 3605 },
+            'KY': { name: 'Kentucky', rate: 0.04, standardDeduction: 3270 },
+            'LA': { name: 'Louisiana', rate: 0.03, standardDeduction: 12500 },
+            'ME': { name: 'Maine', brackets: [{min:0,max:26800,rate:0.058},{min:26800,max:63450,rate:0.0675},{min:63450,max:Infinity,rate:0.0715}], standardDeduction: 15000 },
+            'MD': { name: 'Maryland', brackets: [{min:0,max:1000,rate:0.02},{min:1000,max:2000,rate:0.03},{min:2000,max:3000,rate:0.04},{min:3000,max:100000,rate:0.0475},{min:100000,max:125000,rate:0.05},{min:125000,max:150000,rate:0.0525},{min:150000,max:250000,rate:0.055},{min:250000,max:Infinity,rate:0.0575}], standardDeduction: 2700 },
+            'MA': { name: 'Massachusetts', brackets: [{min:0,max:1083150,rate:0.05},{min:1083150,max:Infinity,rate:0.09}], standardDeduction: 0 },
+            'MI': { name: 'Michigan', rate: 0.0425, standardDeduction: 0 },
+            'MN': { name: 'Minnesota', brackets: [{min:0,max:32570,rate:0.0535},{min:32570,max:106990,rate:0.068},{min:106990,max:198630,rate:0.0785},{min:198630,max:Infinity,rate:0.0985}], standardDeduction: 14950 },
+            'MS': { name: 'Mississippi', rate: 0.044, standardDeduction: 2300, exemption: 6000 },
+            'MO': { name: 'Missouri', brackets: [{min:0,max:1313,rate:0},{min:1313,max:2626,rate:0.02},{min:2626,max:3939,rate:0.025},{min:3939,max:5252,rate:0.03},{min:5252,max:6565,rate:0.035},{min:6565,max:7878,rate:0.04},{min:7878,max:9191,rate:0.045},{min:9191,max:Infinity,rate:0.047}], standardDeduction: 15000 },
+            'MT': { name: 'Montana', brackets: [{min:0,max:21100,rate:0.047},{min:21100,max:Infinity,rate:0.059}], standardDeduction: 15000 },
+            'NE': { name: 'Nebraska', brackets: [{min:0,max:4030,rate:0.0246},{min:4030,max:24120,rate:0.0351},{min:24120,max:38870,rate:0.0501},{min:38870,max:Infinity,rate:0.052}], standardDeduction: 8600 },
+            'NV': { name: 'Nevada', rate: 0, noTax: true },
+            'NH': { name: 'New Hampshire', rate: 0, noTax: true },
+            'NJ': { name: 'New Jersey', brackets: [{min:0,max:20000,rate:0.014},{min:20000,max:35000,rate:0.0175},{min:35000,max:40000,rate:0.035},{min:40000,max:75000,rate:0.05525},{min:75000,max:500000,rate:0.0637},{min:500000,max:1000000,rate:0.0897},{min:1000000,max:Infinity,rate:0.1075}], standardDeduction: 0 },
+            'NM': { name: 'New Mexico', brackets: [{min:0,max:5500,rate:0.015},{min:5500,max:16500,rate:0.032},{min:16500,max:33500,rate:0.043},{min:33500,max:66500,rate:0.047},{min:66500,max:210000,rate:0.049},{min:210000,max:Infinity,rate:0.059}], standardDeduction: 15000 },
+            'NY': { name: 'New York', brackets: [{min:0,max:8500,rate:0.04},{min:8500,max:11700,rate:0.045},{min:11700,max:13900,rate:0.0525},{min:13900,max:80650,rate:0.055},{min:80650,max:215400,rate:0.06},{min:215400,max:1077550,rate:0.0685},{min:1077550,max:5000000,rate:0.0965},{min:5000000,max:25000000,rate:0.103},{min:25000000,max:Infinity,rate:0.109}], standardDeduction: 8000 },
+            'NC': { name: 'North Carolina', rate: 0.0425, standardDeduction: 12750 },
+            'ND': { name: 'North Dakota', brackets: [{min:0,max:48475,rate:0},{min:48475,max:244825,rate:0.0195},{min:244825,max:Infinity,rate:0.025}], standardDeduction: 15000 },
+            'OH': { name: 'Ohio', brackets: [{min:0,max:26050,rate:0},{min:26050,max:100000,rate:0.0275},{min:100000,max:Infinity,rate:0.035}], standardDeduction: 0 },
+            'OK': { name: 'Oklahoma', brackets: [{min:0,max:1000,rate:0.0025},{min:1000,max:2500,rate:0.0075},{min:2500,max:3750,rate:0.0175},{min:3750,max:4900,rate:0.0275},{min:4900,max:7200,rate:0.0375},{min:7200,max:Infinity,rate:0.0475}], standardDeduction: 6350 },
+            'OR': { name: 'Oregon', brackets: [{min:0,max:4400,rate:0.0475},{min:4400,max:11050,rate:0.0675},{min:11050,max:125000,rate:0.0875},{min:125000,max:Infinity,rate:0.099}], standardDeduction: 2800 },
+            'PA': { name: 'Pennsylvania', rate: 0.0307, standardDeduction: 0 },
+            'RI': { name: 'Rhode Island', brackets: [{min:0,max:79900,rate:0.0375},{min:79900,max:181650,rate:0.0475},{min:181650,max:Infinity,rate:0.0599}], standardDeduction: 10900 },
+            'SC': { name: 'South Carolina', brackets: [{min:0,max:3560,rate:0},{min:3560,max:17830,rate:0.03},{min:17830,max:Infinity,rate:0.062}], standardDeduction: 15000 },
+            'SD': { name: 'South Dakota', rate: 0, noTax: true },
+            'TN': { name: 'Tennessee', rate: 0, noTax: true },
+            'TX': { name: 'Texas', rate: 0, noTax: true },
+            'UT': { name: 'Utah', rate: 0.0455, standardDeduction: 0 },
+            'VT': { name: 'Vermont', brackets: [{min:0,max:47900,rate:0.0335},{min:47900,max:116000,rate:0.066},{min:116000,max:242000,rate:0.076},{min:242000,max:Infinity,rate:0.0875}], standardDeduction: 7400 },
+            'VA': { name: 'Virginia', brackets: [{min:0,max:3000,rate:0.02},{min:3000,max:5000,rate:0.03},{min:5000,max:17000,rate:0.05},{min:17000,max:Infinity,rate:0.0575}], standardDeduction: 8500 },
+            'WA': { name: 'Washington', rate: 0, noTax: true },
+            'WV': { name: 'West Virginia', brackets: [{min:0,max:10000,rate:0.0222},{min:10000,max:25000,rate:0.0296},{min:25000,max:40000,rate:0.0333},{min:40000,max:60000,rate:0.0444},{min:60000,max:Infinity,rate:0.0482}], standardDeduction: 0 },
+            'WI': { name: 'Wisconsin', brackets: [{min:0,max:14680,rate:0.035},{min:14680,max:29370,rate:0.044},{min:29370,max:323290,rate:0.053},{min:323290,max:Infinity,rate:0.0765}], standardDeduction: 13560 },
+            'WY': { name: 'Wyoming', rate: 0, noTax: true },
+            'DC': { name: 'Washington DC', brackets: [{min:0,max:10000,rate:0.04},{min:10000,max:40000,rate:0.06},{min:40000,max:60000,rate:0.065},{min:60000,max:250000,rate:0.085},{min:250000,max:500000,rate:0.0925},{min:500000,max:1000000,rate:0.0975},{min:1000000,max:Infinity,rate:0.1075}], standardDeduction: 15000 }
+        };
+
+        // Populate state dropdown
+        const stateSelect = document.getElementById('state-select');
+        Object.keys(stateTaxData).sort((a, b) => stateTaxData[a].name.localeCompare(stateTaxData[b].name)).forEach(code => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = stateTaxData[code].name;
+            stateSelect.appendChild(option);
+        });
+
+        let sources = [];
+        let sourceIdCounter = 0;
+        let totalBalance = 0;
+        let totalPerSecondAfterTax = 0;
+        let lastUpdate = performance.now();
+        let selectedState = '';
+        let selectedCity = '';
+
+        const incomeTypes = [
+            { value: 'salary', label: 'Salary', icon: '💼', supplemental: false },
+            { value: 'bonus', label: 'Bonus', icon: '🎯', supplemental: true },
+            { value: 'freelance', label: 'Freelance', icon: '💻', supplemental: false },
+            { value: 'business', label: 'Business', icon: '🏢', supplemental: false },
+            { value: 'investments', label: 'Investments', icon: '📈', supplemental: false },
+            { value: 'rental', label: 'Rental', icon: '🏠', supplemental: false },
+            { value: 'dividends', label: 'Dividends', icon: '💰', supplemental: false },
+            { value: 'royalties', label: 'Royalties', icon: '🎵', supplemental: false },
+            { value: 'commission', label: 'Commission', icon: '🤝', supplemental: true },
+            { value: 'sidehustle', label: 'Side Hustle', icon: '⚡', supplemental: false },
+            { value: 'other', label: 'Other', icon: '✦', supplemental: false, customRate: true }
+        ];
+
+        const periods = [
+            { value: 'hour', label: 'Per Hour', multiplier: 2080 },
+            { value: 'day', label: 'Per Day', multiplier: 260 },
+            { value: 'week', label: 'Per Week', multiplier: 52 },
+            { value: 'biweekly', label: 'Bi-Weekly', multiplier: 26 },
+            { value: 'month', label: 'Per Month', multiplier: 12 },
+            { value: 'year', label: 'Per Year', multiplier: 1 }
+        ];
+
+        function formatCurrency(amount) {
+            const absAmount = Math.abs(amount);
+            const sign = amount < 0 ? '-' : '';
+            if (absAmount >= 1000000) {
+                return sign + '$' + (absAmount / 1000000).toFixed(2) + 'M';
+            }
+            if (absAmount >= 1000) {
+                return sign + '$' + absAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            if (absAmount >= 0.01) {
+                return sign + '$' + absAmount.toFixed(2);
+            }
+            return sign + '$' + absAmount.toFixed(4);
+        }
+
+        function formatBalance(amount) {
+            const absAmount = Math.abs(amount);
+            const sign = amount < 0 ? '-' : '';
+            if (absAmount >= 1000000) {
+                return sign + '$' + (absAmount / 1000000).toFixed(4) + 'M';
+            }
+            if (absAmount >= 1000) {
+                return sign + '$' + absAmount.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+            }
+            return sign + '$' + absAmount.toFixed(4);
+        }
+
+        function calculateProgressiveTax(income, brackets) {
+            let tax = 0;
+            for (const bracket of brackets) {
+                if (income > bracket.min) {
+                    const taxableInBracket = Math.min(income, bracket.max) - bracket.min;
+                    tax += taxableInBracket * bracket.rate;
+                }
+            }
+            return tax;
+        }
+
+        function calculateFederalTax(grossSalary) {
+            const taxableIncome = Math.max(0, grossSalary - federalStandardDeduction);
+            return calculateProgressiveTax(taxableIncome, federalBrackets);
+        }
+
+        function calculateStateTax(grossSalary, stateCode) {
+            if (!stateCode || !stateTaxData[stateCode]) return 0;
+            
+            const stateData = stateTaxData[stateCode];
+            
+            if (stateData.noTax) return 0;
+            
+            const deduction = stateData.standardDeduction || 0;
+            const exemption = stateData.exemption || 0;
+            const taxableIncome = Math.max(0, grossSalary - deduction - exemption);
+            
+            if (stateData.brackets) {
+                return calculateProgressiveTax(taxableIncome, stateData.brackets);
+            } else {
+                return taxableIncome * stateData.rate;
+            }
+        }
+
+        function calculateLocalTax(grossSalary, stateCode, cityCode) {
+            if (!cityCode || !stateCode || !localTaxData[stateCode]) return 0;
+            
+            const cityData = localTaxData[stateCode].cities[cityCode];
+            if (!cityData) return 0;
+            
+            // Handle Yonkers-style surcharge (percentage of state tax)
+            if (cityData.surchargeRate) {
+                const stateTax = calculateStateTax(grossSalary, stateCode);
+                return stateTax * cityData.surchargeRate;
+            }
+            
+            // Handle NYC-style progressive brackets
+            if (cityData.brackets) {
+                // NYC uses taxable income (after standard deduction)
+                const stateData = stateTaxData[stateCode];
+                const deduction = stateData.standardDeduction || 0;
+                const taxableIncome = Math.max(0, grossSalary - deduction);
+                return calculateProgressiveTax(taxableIncome, cityData.brackets);
+            }
+            
+            return 0;
+        }
+
+        function onStateChange() {
+            selectedState = stateSelect.value;
+            selectedCity = '';
+            
+            const cityGroup = document.getElementById('city-group');
+            const citySelect = document.getElementById('city-select');
+            
+            // Check if this state has local taxes
+            if (selectedState && localTaxData[selectedState]) {
+                const cities = localTaxData[selectedState].cities;
+                citySelect.innerHTML = '<option value="">None (outside city limits)</option>';
+                
+                Object.keys(cities).forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = cities[code].name;
+                    citySelect.appendChild(option);
+                });
+                
+                cityGroup.style.display = 'block';
+            } else {
+                cityGroup.style.display = 'none';
+            }
+            
+            updateTaxCalculations();
+        }
+
+        function getTotalGrossAnnual() {
+            return sources.reduce((sum, s) => {
+                const period = periods.find(p => p.value === s.period);
+                return sum + (s.amount * period.multiplier);
+            }, 0);
+        }
+
+        function getIncomeBreakdown() {
+            let regular = 0;
+            let supplemental = 0;
+            let customRateIncome = [];
+            
+            sources.forEach(s => {
+                const period = periods.find(p => p.value === s.period);
+                const annual = s.amount * period.multiplier;
+                const typeInfo = incomeTypes.find(t => t.value === s.type);
+                
+                if (typeInfo && typeInfo.customRate && s.customTaxRate !== null) {
+                    customRateIncome.push({ amount: annual, rate: s.customTaxRate / 100 });
+                } else if (typeInfo && typeInfo.supplemental) {
+                    supplemental += annual;
+                } else {
+                    regular += annual;
+                }
+            });
+            
+            return { regular, supplemental, customRateIncome, total: regular + supplemental + customRateIncome.reduce((sum, c) => sum + c.amount, 0) };
+        }
+
+        function calculateTotalFederalTax(regularIncome, supplementalIncome) {
+            const regularTax = calculateFederalTax(regularIncome);
+            const supplementalTax = calculateSupplementalFederalTax(supplementalIncome);
+            return regularTax + supplementalTax;
+        }
+
+        function calculateCustomRateTax(customRateIncome) {
+            return customRateIncome.reduce((sum, c) => sum + (c.amount * c.rate), 0);
+        }
+
+        function updateTaxCalculations() {
+            selectedState = stateSelect.value;
+            selectedCity = document.getElementById('city-select').value;
+            
+            const taxStats = document.getElementById('tax-stats');
+            const localStat = document.getElementById('local-stat');
+            
+            if (!selectedState) {
+                taxStats.style.display = 'none';
+                updateSummary();
+                return;
+            }
+            
+            taxStats.style.display = 'flex';
+            
+            const { regular, supplemental, customRateIncome, total } = getIncomeBreakdown();
+            const regularAndSupplementalTotal = regular + supplemental;
+            
+            // Calculate standard taxes for regular and supplemental income
+            const federalTax = calculateTotalFederalTax(regular, supplemental);
+            const stateTax = calculateStateTax(regularAndSupplementalTotal, selectedState);
+            const localTax = calculateLocalTax(regularAndSupplementalTotal, selectedState, selectedCity);
+            
+            // Custom rate income uses its own rates
+            const customTax = calculateCustomRateTax(customRateIncome);
+            
+            const totalTax = federalTax + stateTax + localTax + customTax;
+            const takeHome = total - totalTax;
+            
+            const federalRate = total > 0 ? (federalTax / total) * 100 : 0;
+            const stateRate = total > 0 ? (stateTax / total) * 100 : 0;
+            const localRate = total > 0 ? (localTax / total) * 100 : 0;
+            const effectiveRate = total > 0 ? (totalTax / total) * 100 : 0;
+            
+            document.getElementById('federal-rate').textContent = federalRate.toFixed(1) + '%';
+            document.getElementById('state-rate').textContent = stateRate.toFixed(1) + '%';
+            document.getElementById('local-rate').textContent = localRate.toFixed(1) + '%';
+            document.getElementById('total-rate').textContent = effectiveRate.toFixed(1) + '%';
+            document.getElementById('take-home').textContent = formatCurrency(takeHome);
+            
+            // Show/hide local tax stat
+            if (selectedCity && localTax > 0) {
+                localStat.style.display = 'block';
+            } else {
+                localStat.style.display = 'none';
+            }
+            
+            // Refresh all income source stats
+            sources.forEach(source => renderSourceStats(source.id));
+            
+            updateSummary();
+        }
+
+        function addSource() {
+            const id = sourceIdCounter++;
+            const source = {
+                id,
+                type: 'salary',
+                amount: 0,
+                period: 'year',
+                customTaxRate: null
+            };
+            sources.push(source);
+            renderSources();
+            updateTaxCalculations();
+        }
+
+        function deleteSource(id) {
+            sources = sources.filter(s => s.id !== id);
+            renderSources();
+            updateTaxCalculations();
+        }
+
+        function updateSource(id, field, value) {
+            const source = sources.find(s => s.id === id);
+            if (!source) return;
+            
+            if (field === 'amount') {
+                source[field] = parseFloat(value) || 0;
+            } else if (field === 'customTaxRate') {
+                const rate = parseFloat(value);
+                source[field] = isNaN(rate) ? null : Math.min(100, Math.max(0, rate));
+            } else {
+                source[field] = value;
+            }
+            
+            // Re-render all cards when type changes (to update supplemental badge / custom rate input)
+            if (field === 'type') {
+                renderSources();
+            }
+            
+            updateTaxCalculations();
+            renderSourceStats(id);
+            
+            // Update active state
+            const card = document.getElementById(`source-${id}`);
+            if (card) {
+                if (source.amount > 0) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            }
+        }
+
+        function renderSources() {
+            const grid = document.getElementById('sources-grid');
+            const summary = document.getElementById('summary-section');
+            const emptyState = document.getElementById('empty-state');
+
+            if (sources.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-state-icon">💼</div>
+                        <p>Add your first income source to begin tracking</p>
+                    </div>
+                `;
+                summary.style.display = 'none';
+                return;
+            }
+
+            summary.style.display = 'block';
+
+            grid.innerHTML = sources.map(source => {
+                const typeInfo = incomeTypes.find(t => t.value === source.type) || incomeTypes[0];
+                const period = periods.find(p => p.value === source.period);
+                const annualAmount = source.amount * period.multiplier;
+                const isActive = source.amount > 0;
+                const isSupplemental = typeInfo.supplemental;
+                const hasCustomRate = typeInfo.customRate && source.customTaxRate !== null;
+                
+                // Calculate this source's tax based on its type
+                let taxRate;
+                if (hasCustomRate) {
+                    // Use custom tax rate directly
+                    taxRate = source.customTaxRate / 100;
+                } else {
+                    let federalTax;
+                    if (isSupplemental) {
+                        federalTax = calculateSupplementalFederalTax(annualAmount);
+                    } else {
+                        federalTax = calculateFederalTax(annualAmount);
+                    }
+                    const stateTax = calculateStateTax(annualAmount, selectedState);
+                    const localTax = calculateLocalTax(annualAmount, selectedState, selectedCity);
+                    const totalTax = federalTax + stateTax + localTax;
+                    taxRate = annualAmount > 0 ? totalTax / annualAmount : 0;
+                }
+                
+                const afterTaxAnnual = annualAmount * (1 - taxRate);
+                const secondsPerYear = 365 * 24 * 60 * 60;
+                const perSecondAfterTax = afterTaxAnnual / secondsPerYear;
+                
+                return `
+                    <div class="income-card ${isActive ? 'active' : ''}" id="source-${source.id}">
+                        <div class="income-card-header">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <div class="income-type-badge">
+                                    <span>${typeInfo.icon}</span>
+                                    <span>${typeInfo.label}</span>
+                                </div>
+                                ${isSupplemental ? '<div class="supplemental-tag">22% Fed Rate</div>' : ''}
+                                ${hasCustomRate ? `<div class="supplemental-tag" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">Custom ${source.customTaxRate}%</div>` : ''}
+                            </div>
+                            <button class="btn-delete" onclick="deleteSource(${source.id})" title="Remove">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="income-inputs">
+                            <div class="form-group">
+                                <label>Type</label>
+                                <select onchange="updateSource(${source.id}, 'type', this.value)">
+                                    ${incomeTypes.map(t => `
+                                        <option value="${t.value}" ${source.type === t.value ? 'selected' : ''}>
+                                            ${t.icon} ${t.label}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount</label>
+                                <input type="number" placeholder="50,000" value="${source.amount || ''}"
+                                    onchange="updateSource(${source.id}, 'amount', this.value)"
+                                    oninput="updateSource(${source.id}, 'amount', this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label>Period</label>
+                                <select onchange="updateSource(${source.id}, 'period', this.value)">
+                                    ${periods.map(p => `
+                                        <option value="${p.value}" ${source.period === p.value ? 'selected' : ''}>
+                                            ${p.label}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            ${typeInfo.customRate ? `
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>Custom Tax Rate (%)</label>
+                                <input type="number" placeholder="e.g. 45" min="0" max="100" step="0.1"
+                                    value="${source.customTaxRate !== null ? source.customTaxRate : ''}"
+                                    onchange="updateSource(${source.id}, 'customTaxRate', this.value)"
+                                    oninput="updateSource(${source.id}, 'customTaxRate', this.value)">
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="income-stats" id="stats-${source.id}">
+                            <div class="income-stat">
+                                <div class="value">${formatCurrency(perSecondAfterTax)}</div>
+                                <div class="label">Per Second</div>
+                            </div>
+                            <div class="income-stat">
+                                <div class="value">${formatCurrency(afterTaxAnnual)}</div>
+                                <div class="label">Per Year</div>
+                            </div>
+                            <div class="income-stat">
+                                <div class="value" style="color: var(--danger);">${(taxRate * 100).toFixed(1)}%</div>
+                                <div class="label">Tax Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSourceStats(id) {
+            const source = sources.find(s => s.id === id);
+            if (!source) return;
+
+            const typeInfo = incomeTypes.find(t => t.value === source.type) || incomeTypes[0];
+            const period = periods.find(p => p.value === source.period);
+            const annualAmount = source.amount * period.multiplier;
+            const isSupplemental = typeInfo.supplemental;
+            const hasCustomRate = typeInfo.customRate && source.customTaxRate !== null;
+            
+            // Calculate this source's tax based on its type
+            let taxRate;
+            if (hasCustomRate) {
+                taxRate = source.customTaxRate / 100;
+            } else {
+                let federalTax;
+                if (isSupplemental) {
+                    federalTax = calculateSupplementalFederalTax(annualAmount);
+                } else {
+                    federalTax = calculateFederalTax(annualAmount);
+                }
+                const stateTax = calculateStateTax(annualAmount, selectedState);
+                const localTax = calculateLocalTax(annualAmount, selectedState, selectedCity);
+                const totalTax = federalTax + stateTax + localTax;
+                taxRate = annualAmount > 0 ? totalTax / annualAmount : 0;
+            }
+            
+            const afterTaxAnnual = annualAmount * (1 - taxRate);
+            const secondsPerYear = 365 * 24 * 60 * 60;
+            const perSecondAfterTax = afterTaxAnnual / secondsPerYear;
+
+            const stats = document.getElementById(`stats-${id}`);
+            if (stats) {
+                stats.innerHTML = `
+                    <div class="income-stat">
+                        <div class="value">${formatCurrency(perSecondAfterTax)}</div>
+                        <div class="label">Per Second</div>
+                    </div>
+                    <div class="income-stat">
+                        <div class="value">${formatCurrency(afterTaxAnnual)}</div>
+                        <div class="label">Per Year</div>
+                    </div>
+                    <div class="income-stat">
+                        <div class="value" style="color: var(--danger);">${(taxRate * 100).toFixed(1)}%</div>
+                        <div class="label">Tax Rate</div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateSummary() {
+            const { regular, supplemental, customRateIncome, total } = getIncomeBreakdown();
+            const regularAndSupplementalTotal = regular + supplemental;
+            
+            const federalTax = calculateTotalFederalTax(regular, supplemental);
+            const stateTax = calculateStateTax(regularAndSupplementalTotal, selectedState);
+            const localTax = calculateLocalTax(regularAndSupplementalTotal, selectedState, selectedCity);
+            const customTax = calculateCustomRateTax(customRateIncome);
+            
+            const totalTax = federalTax + stateTax + localTax + customTax;
+            const netAnnual = total - totalTax;
+            
+            // Calendar-based calculations (24/7/365)
+            const secondsPerYear = 365 * 24 * 60 * 60; // 31,536,000
+            totalPerSecondAfterTax = netAnnual / secondsPerYear;
+
+            document.getElementById('sum-second').textContent = formatCurrency(totalPerSecondAfterTax);
+            document.getElementById('sum-hour').textContent = formatCurrency(netAnnual / 8760);
+            document.getElementById('sum-day').textContent = formatCurrency(netAnnual / 365);
+            document.getElementById('sum-week').textContent = formatCurrency(netAnnual / 52);
+            document.getElementById('sum-month').textContent = formatCurrency(netAnnual / 12);
+            document.getElementById('sum-year').textContent = formatCurrency(netAnnual);
+
+            document.getElementById('rate-value').textContent = formatCurrency(totalPerSecondAfterTax) + '/sec';
+        }
+
+        function gameLoop(currentTime) {
+            const deltaTime = (currentTime - lastUpdate) / 1000;
+            lastUpdate = currentTime;
+
+            if (totalPerSecondAfterTax > 0) {
+                totalBalance += totalPerSecondAfterTax * deltaTime;
+                document.getElementById('balance').textContent = formatBalance(totalBalance);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        requestAnimationFrame(gameLoop);
+
+        function resetBalance() {
+            totalBalance = 0;
+            document.getElementById('balance').textContent = '$0.0000';
+        }
+    </script>
+</body>
+</html>
